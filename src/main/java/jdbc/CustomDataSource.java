@@ -1,7 +1,5 @@
 package jdbc;
 
-import javax.sql.DataSource;
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,12 +11,15 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import javax.sql.DataSource;
+
 @Getter
 @Setter
 public class CustomDataSource implements DataSource {
-    private static volatile CustomDataSource instance;
     private static final SQLException SQL_EXCEPTION = new SQLException();
+    private static volatile CustomDataSource instance;
     private static final Object MONITOR = new Object();
+
     private final String driver;
     private final String url;
     private final String name;
@@ -27,8 +28,8 @@ public class CustomDataSource implements DataSource {
     private CustomDataSource(String driver, String url, String password, String name) {
         this.driver = driver;
         this.url = url;
-        this.password = password;
         this.name = name;
+        this.password = password;
         instance = this;
     }
 
@@ -37,14 +38,19 @@ public class CustomDataSource implements DataSource {
             synchronized (MONITOR) {
                 if (instance == null) {
                     try {
+
                         Properties properties = new Properties();
-                        properties.load(CustomDataSource.class.getClassLoader().getResourceAsStream("app.properties"));
+                        properties.load(
+                                CustomDataSource.class.getClassLoader().getResourceAsStream("app.properties")
+                        );
+
                         instance = new CustomDataSource(
                                 properties.getProperty("postgres.driver"),
                                 properties.getProperty("postgres.url"),
                                 properties.getProperty("postgres.password"),
                                 properties.getProperty("postgres.name")
                         );
+
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -54,48 +60,39 @@ public class CustomDataSource implements DataSource {
         return instance;
     }
 
-    @Override
-    public Connection getConnection() {
+    @Override public Connection getConnection() throws SQLException {
         return new CustomConnector().getConnection(url, name, password);
     }
 
-    @Override
-    public Connection getConnection(String username, String password) {
-        return new CustomConnector().getConnection(url, username, password);
+    @Override public Connection getConnection(final String username, final String password) throws SQLException {
+        return new CustomConnector().getConnection(url, name, password);
     }
 
-    @Override
-    public PrintWriter getLogWriter() throws SQLException {
+    @Override public PrintWriter getLogWriter() throws SQLException {
         throw SQL_EXCEPTION;
     }
 
-    @Override
-    public void setLogWriter(PrintWriter out) throws SQLException {
+    @Override public void setLogWriter(final PrintWriter out) throws SQLException {
         throw SQL_EXCEPTION;
     }
 
-    @Override
-    public void setLoginTimeout(int seconds) throws SQLException {
+    @Override public void setLoginTimeout(final int seconds) throws SQLException {
         throw SQL_EXCEPTION;
     }
 
-    @Override
-    public int getLoginTimeout() throws SQLException {
+    @Override public int getLoginTimeout() throws SQLException {
         throw SQL_EXCEPTION;
     }
 
-    @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+    @Override public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         throw new SQLFeatureNotSupportedException();
     }
 
-    @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException {
+    @Override public <T> T unwrap(final Class<T> iface) throws SQLException {
         throw SQL_EXCEPTION;
     }
 
-    @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+    @Override public boolean isWrapperFor(final Class<?> iface) throws SQLException {
         throw SQL_EXCEPTION;
     }
 }
